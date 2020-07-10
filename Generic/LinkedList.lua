@@ -1,3 +1,6 @@
+--This is a Generic First -> Last LinkedList
+--Courseplay Interface should be a LinkedListSetting
+
 LinkedList = CpObject()
 
 function LinkedList:init(...)
@@ -15,33 +18,30 @@ function LinkedNode:new(_next,_data)
 end
 
 --add methods
-
 function LinkedList:addLast(...)	
-	local LastNode = self:iterateToEnd(self.First)
-	local node = LinkedNode:new(nil,...)
-	LastNode.Next = node
+	local node = self:iterateToEnd(self.First)
+	node.Next = LinkedNode:new(nil,...)
 	self:incrementCount()
 --	self:printLinkedList()
 end
 
 function LinkedList:addFirst(...)
-	local First = self.First
+	local First = self.First.Next
 	local node = LinkedNode:new(First,...)
-	self.First = node
+	self.First.Next = node
 	self:incrementCount()
+--	self:printLinkedList()
 end
 
 --remove methos 
-
 function LinkedList:removeLast()
 	if self:isEmpty() then 
 		return false
 	end
-	local node = self.Last
-	self.Last = self.Last.Prev
-	self.Last.Next = nil
+	local node = self:iterateByIndex(self.count-1)
+	local Last = node.Next
+	node.Next = nil
 	self:decrementCount()
-	return true
 end
 
 function LinkedList:removeFirst()
@@ -49,9 +49,8 @@ function LinkedList:removeFirst()
 		return false
 	end
 	local node = self.First.Next
-	self.First.Next = node.Next
+	local First.Next = node.Next
 	self:decrementCount()
-	return true
 end
 
 function LinkedList:removeX(index)
@@ -71,7 +70,6 @@ function LinkedList:removeX(index)
 end
 
 --shift Node methods
-
 function LinkedList:swapUpX(index)
 	local prePreNode = self:getElementByIndex(index-2)
 	if prePreNode then 
@@ -129,8 +127,7 @@ function LinkedList:swapDownX(index)
 --	self:printLinkedList()
 end
 
---print methods
-
+--print List
 function LinkedList:printLinkedList()
 	if self:isEmpty() then 
 		return false
@@ -144,13 +141,10 @@ function LinkedList:printLinkedList()
 	end
 end
 
-
 --local helpers
-
 function LinkedList:addToEmptyList(...)
 	local node = LinkedNode:new(nil,self.First,...)
 	self.First=node
-	self.Last=node
 	self:incrementCount()
 end
 
@@ -205,6 +199,13 @@ function LinkedList:iterateByIndex(index)
 	return node
 end
 
+function LinkedList:iterateToEnd(node)
+	while node.Next ~=nil do 
+		node=node.Next
+	end
+	return node
+end
+
 function LinkedList:incrementCount()
 	self.count = self.count+1
 end
@@ -213,12 +214,17 @@ function LinkedList:decrementCount()
 	self.count = self.count-1
 end
 
+--getters
+function LinkedList:getFirst()
+	return self.First.Next
+end
 
-function LinkedList:iterateToEnd(node)
-	while node.Next ~=nil do 
-		node=node.Next
-	end
-	return node
+function LinkedList:getSize()
+	return self.count
+end
+
+function LinkedList:getElementByIndex(index)
+	return self:iterateByIndex(index)
 end
 
 function LinkedList:getData()
@@ -233,26 +239,3 @@ function LinkedList:getData()
 	end
 	return totalData
 end
-
---getters
-
-function LinkedList:getFirst()
-	return self.First
-end
-
-
-function LinkedList:getSize()
-	return self.count
-end
-
-
-function LinkedList:getElementByIndex(index)
-	return self:iterateByIndex(index)
-end
-
-
-
-
-
-
-

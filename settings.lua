@@ -2786,7 +2786,7 @@ end
 UseRecordingSpeedSetting = CpObject(BooleanSetting)
 function UseRecordingSpeedSetting:init(vehicle)
 	BooleanSetting.init(self, 'useRecordingSpeed', 'COURSEPLAY_MAX_SPEED_MODE', 'COURSEPLAY_MAX_SPEED_MODE', vehicle, {'COURSEPLAY_MAX_SPEED_MODE_MAX','COURSEPLAY_MAX_SPEED_MODE_RECORDING'})
-	self:set(false)
+	self:set(true)
 end
 
 ---@class WarningLightsModeSetting : SettingList
