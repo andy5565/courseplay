@@ -1564,15 +1564,6 @@ function courseplay:changeLastValidTipDistance(vehicle, changeBy)
 	vehicle.cp.lastValidTipDistance = MathUtil.clamp(vehicle.cp.lastValidTipDistance + changeBy, -500, 0);
 end;
 
-function courseplay:changemaxRunNumber(vehicle, changeBy)
- 	local number = MathUtil.clamp(vehicle.cp.settings.runCounterMax:get() + changeBy, 0, 10);
-	vehicle.cp.settings.runCounterMax:set(number)
-end;
-
-function courseplay:resetRunCounter(vehicle)
-	vehicle.cp.driver:resetRunCounter()
-end
-
 function courseplay:toggleSucHud(vehicle)
 	vehicle.cp.suc.active = not vehicle.cp.suc.active;
 	---courseplay.buttons:setActiveEnabled(vehicle, 'suc');
@@ -2196,6 +2187,55 @@ end
 function SettingList:getNetworkCurrentValue()
 	return self.current
 end
+---WIP
+---Generic LinkedList setting and Interface for LinkedList.lua
+---@class LinkedList : Setting
+LinkedListSetting = CpObject(Setting)
+
+function LinkedListSetting:init(name, label, toolTip, vehicle)
+	Setting.init(self, name, label, toolTip, vehicle)
+	self.List = LinkedList({value=nil,text="Dummy"})
+end
+
+function LinkedListSetting:moveUpByIndex(index)
+	self.List:swapUpX(index)
+end
+
+function LinkedListSetting:moveDownByIndex(index)
+	self.List:swapDownX(index)
+end
+
+function LinkedListSetting:addLast(data)
+	self.List:addLast(data)
+end
+
+function LinkedListSetting:deleteByIndex(index)
+	self.List:removeX(index)
+end
+
+function LinkedListSetting:getText(index)
+	data = self:getDataByIndex(index)
+	if data and data.text then 
+		return data.text
+	else
+		return ""
+	end
+end
+
+function LinkedListSetting:getDataByIndex(index)
+	local element = self.List:getElementByIndex(index)
+	if element and element.data then 
+		return element.data
+	end
+end
+
+function LinkedListSetting:getSize()
+	return self.List:getSize()
+end
+
+function LinkedListSetting:getData()
+	return self.List:getData()
+end
 
 --- Generic boolean setting
 ---@class BooleanSetting : SettingList
@@ -2742,21 +2782,6 @@ function DriverPriorityUseFillLevelSetting:init(vehicle)
 	self:set(false)
 end
 
----@class RunCounterMaxSetting : SettingList
-RunCounterMaxSetting = CpObject(SettingList)
-RunCounterMaxSetting.RUN_COUNTER_OFF = 0
-function RunCounterMaxSetting:init(vehicle)
-	SettingList.init(self, 'runCounterMax', 'COURSEPLAY_NUMBER_OF_RUNS', 'COURSEPLAY_NUMBER_OF_RUNS', vehicle,
-			{ RunCounterMaxSetting.RUN_COUNTER_OFF,1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			{ 'COURSEPLAY_DEACTIVATED','1', '2', '3', '4', '5', '6', '7', '8', '9', '10'}
-		)
-	self:set(0)
-end
-
-function RunCounterMaxSetting:getIsRunCounterActive()
-	return not self:is(self.RUN_COUNTER_OFF)
-end
-
 ---@class UseRecordingSpeedSetting : BooleanSetting
 UseRecordingSpeedSetting = CpObject(BooleanSetting)
 function UseRecordingSpeedSetting:init(vehicle)
@@ -2843,6 +2868,147 @@ CombineWantsCourseplayerSetting = CpObject(BooleanSetting)
 function CombineWantsCourseplayerSetting:init(vehicle)
 	BooleanSetting.init(self, 'combineWantsCourseplayer', 'COURSEPLAY_DRIVER', 'COURSEPLAY_DRIVER', vehicle, {'COURSEPLAY_REQUEST_UNLOADING_DRIVER','COURSEPLAY_UNLOADING_DRIVER_REQUESTED'})
 	self:set(false)
+end
+
+---@class SiloSelectedFillTypeSetting : LinkedListSetting
+SiloSelectedFillTypeSetting = CpObject(LinkedListSetting)
+function SiloSelectedFillTypeSetting:init(vehicle)
+	LinkedListSetting.init(self, 'siloSelectedFillType', 'COURSEPLAY_FARM_SILO_FILL_TYPE', 'COURSEPLAY_FARM_SILO_FILL_TYPE', vehicle)
+	self.MAX_RUNS = 20
+	self.MAX_FILLTYPES = 5
+end
+
+function SiloSelectedFillTypeSetting:addFilltype()
+	if self:isFull() then 
+		return
+	end
+	local supportedFillTypes = {}
+	self:getSupportedFillTypes(self.vehicle,supportedFillTypes)
+	self:checkSelectedFillTypes(supportedFillTypes)
+	if supportedFillTypes then
+		g_gui:showSiloDialog({title="Filltype Selection", fillLevels=supportedFillTypes, capacity=100, callback=self.onFillTypeSelection, target=self, hasInfiniteCapacity = true})
+	end
+end
+
+function SiloSelectedFillTypeSetting:isFull()
+	if self:getSize() >= self.MAX_FILLTYPES then 
+		return true
+	end
+	return false
+end
+
+function SiloSelectedFillTypeSetting:onFillTypeSelection(selectedFillType)
+	if selectedFillType and selectedFillType ~= FillType.UNKNOWN then 
+		self:addLast({fillType = selectedFillType, text = g_fillTypeManager:getFillTypeByIndex(selectedFillType).title, runCounter = self.MAX_RUNS})
+	end
+end  
+
+function SiloSelectedFillTypeSetting:checkSelectedFillTypes(supportedFillTypes)
+	selectedFillTypes = self:getFillTypes()
+	for index,data in ipairs(selectedFillTypes) do 
+		if supportedFillTypes[data.fillType] then
+			supportedFillTypes[data.fillType]=0
+		else
+			--TODO maybe use to clean up old fillType after disconnect trailer or change mode ??
+			--self:deleteByIndex(index) 
+		end
+	end
+end 
+
+function SiloSelectedFillTypeSetting:getSupportedFillTypes(object,supportedFillTypes)  
+	if object and object.spec_fillUnit and object:getFillUnits() then
+		if supportedFillTypes ~= nil then 
+			for fillUnitIndex, fillUnit in pairs(object:getFillUnits()) do
+				for fillType,bool in pairs(object:getFillUnitSupportedFillTypes(fillUnitIndex)) do 
+					if bool then 
+						if supportedFillTypes[fillType] == nil then
+							supportedFillTypes[fillType]=100
+						end
+					end
+				end		
+			end
+		end
+	end
+	-- get all attached implements recursively
+	for _,impl in pairs(object:getAttachedImplements()) do
+		self:getSupportedFillTypes(impl.object,supportedFillTypes)
+	end
+end
+
+--TODO: fix this one
+function SiloSelectedFillTypeSetting:isActive()  
+	local data = self:getData()
+	local runCounterCheck = false
+	for _,data in pairs(data) do 
+		if data.runCounter > 0 then 
+			runCounterCheck=true
+		end
+	end
+	return runCounterCheck
+end
+
+function SiloSelectedFillTypeSetting:hasFillTypes()  
+	if #self:getFillTypes()>0 then 
+		return true
+	end
+	return false
+end
+
+function SiloSelectedFillTypeSetting:getFillTypes()  
+	local totalData = self:getData()
+	local fillTypes = {}
+	local i=1
+	for _,data in ipairs(totalData) do 
+		local fillTypeData = {}
+		fillTypeData.fillType = data.fillType
+		fillTypeData.runCounter = data.runCounter
+		fillTypes[i]=fillTypeData
+		i=i+1
+	end
+	return fillTypes
+end
+
+function SiloSelectedFillTypeSetting:getRunCounterText(index)
+	local data = self:getDataByIndex(index)
+	if data and data.runCounter then 
+		local strg = data.runCounter.."/"..self.MAX_RUNS
+		return strg
+	else
+		return ""
+	end
+end
+
+function SiloSelectedFillTypeSetting:incrementRunCounter(index)
+	local data = self:getDataByIndex(index)
+	if data and data.runCounter then 
+		if not (data.runCounter >= self.MAX_RUNS) then 
+			data.runCounter = data.runCounter+1
+		end
+	end
+end
+
+function SiloSelectedFillTypeSetting:decrementRunCounterByFillType(fillTypes)
+	local fillTypeData = self:getFillTypes()
+	for index,data in ipairs(fillTypeData) do 
+		for _,fillType in ipairs(fillTypes) do 
+			if data.fillType == fillType then
+				local _data = self:getDataByIndex(index)
+				_data.runCounter = _data.runCounter-1
+				break
+			else
+		
+			end
+		end
+	end
+end
+
+function SiloSelectedFillTypeSetting:decrementRunCounter(index)
+	local data = self:getDataByIndex(index)
+	if data and data.runCounter then 
+		if not (data.runCounter <= 0) then 
+			data.runCounter = data.runCounter-1
+		end
+	end
 end
 
 --- Container for settings

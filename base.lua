@@ -574,6 +574,7 @@ function courseplay:onLoad(savegame)
 	self.cp.settings:addSetting(RealisticDrivingSetting, self)
 	self.cp.settings:addSetting(DriveUnloadNowSetting, self)
 	self.cp.settings:addSetting(CombineWantsCourseplayerSetting, self)
+	self.cp.settings:addSetting(SiloSelectedFillTypeSetting, self)
 	
 	---@type SettingsContainer
 	self.cp.courseGeneratorSettings = SettingsContainer()

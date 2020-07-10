@@ -127,6 +127,7 @@ local function initialize()
 		'Events/StartStopWorkEvent',
 		'Events/UserConnectedEvent',
 		'Events/PostSyncEvent',
+		'Generic/LinkedList'
 	};
 
 	local numFiles, numFilesLoaded = #(fileList) + 2, 2; -- + 2 as 'register.lua', 'courseplay.lua' have already been loaded

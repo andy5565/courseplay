@@ -462,26 +462,26 @@ function courseplay.hud:setContent(vehicle)
 		vehicle.cp.hud.content.bottomInfo.convoyText = nil
 	end	
 		
-	if vehicle.cp.settings.runCounterMax:getIsRunCounterActive() and vehicle.cp.canDrive and vehicle.cp.driver.runCounter then
-		if vehicle.cp.siloSelectedFillType ~= nil and vehicle.cp.siloSelectedFillType ~= FillType.UNKNOWN then
-			vehicle.cp.hud.content.bottomInfo.runCounterText = g_fillTypeManager:getFillTypeByIndex(vehicle.cp.siloSelectedFillType).title..string.format(": %d / %s",vehicle.cp.driver.runCounter,  vehicle.cp.settings.runCounterMax:get());
-		else
-			vehicle.cp.hud.content.bottomInfo.runCounterText = courseplay:loc('UNKNOWN')..string.format(": %d / %s",vehicle.cp.driver.runCounter, vehicle.cp.settings.runCounterMax:get());
-		end
-	else
-		vehicle.cp.hud.content.bottomInfo.runCounterText = nil 
-	end
+--	if vehicle.cp.settings.runCounterMax:getIsRunCounterActive() and vehicle.cp.canDrive and vehicle.cp.driver.runCounter then
+--		if vehicle.cp.siloSelectedFillType ~= nil and vehicle.cp.siloSelectedFillType ~= FillType.UNKNOWN then
+--			vehicle.cp.hud.content.bottomInfo.runCounterText = g_fillTypeManager:getFillTypeByIndex(vehicle.cp.siloSelectedFillType).title..string.format(": %d / %s",vehicle.cp.driver.runCounter,  vehicle.cp.settings.runCounterMax:get());
+--		else
+--			vehicle.cp.hud.content.bottomInfo.runCounterText = courseplay:loc('UNKNOWN')..string.format(": %d / %s",vehicle.cp.driver.runCounter, vehicle.cp.settings.runCounterMax:get());
+--		end
+--	else
+--		vehicle.cp.hud.content.bottomInfo.runCounterText = nil 
+--	end
 	
 	
-	if vehicle.cp.hud.content.bottomInfo.runCounterText ~= nil then
-		local maxLength = 38
-		local courseNameLength = string.len(vehicle.cp.hud.content.bottomInfo.courseNameText)
-		local runCounterLength = string.len(vehicle.cp.hud.content.bottomInfo.runCounterText)
-		if courseNameLength + runCounterLength > maxLength then
-			local maxValidLength = maxLength-runCounterLength-3
-			vehicle.cp.hud.content.bottomInfo.courseNameText = string.sub(vehicle.cp.hud.content.bottomInfo.courseNameText,1, maxValidLength).."..."
-		end	
-	end
+--	if vehicle.cp.hud.content.bottomInfo.runCounterText ~= nil then
+--		local maxLength = 38
+--		local courseNameLength = string.len(vehicle.cp.hud.content.bottomInfo.courseNameText)
+--		local runCounterLength = string.len(vehicle.cp.hud.content.bottomInfo.runCounterText)
+--		if courseNameLength + runCounterLength > maxLength then
+--			local maxValidLength = maxLength-runCounterLength-3
+--			vehicle.cp.hud.content.bottomInfo.courseNameText = string.sub(vehicle.cp.hud.content.bottomInfo.courseNameText,1, maxValidLength).."..."
+--		end	
+--	end
 	
 	------------------------------------------------------------------
 
@@ -773,24 +773,15 @@ function courseplay.hud:updatePageContent(vehicle, page)
 					else
 						self:disableButtonWithFunction(vehicle,page, 'changeSiloFillType')
 					end
-				elseif entry.functionToCall == 'changemaxRunNumber' then
-					if vehicle.cp.canDrive then
-						self:enableButtonWithFunction(vehicle,page, 'changemaxRunNumber')
-						vehicle.cp.hud.content.pages[page][line][1].text = vehicle.cp.settings.runCounterMax:getLabel()
-						vehicle.cp.hud.content.pages[page][line][2].text = vehicle.cp.settings.runCounterMax:getText()
+				elseif entry.functionToCall == 'Setting:siloSelectedFillType:addFilltype' then
+					if not vehicle.cp.settings.siloSelectedFillType:isFull() then --TODO figure a logic behind this out!!
+						self:enableButtonWithFunction(vehicle,page, 'changeSiloFillType')
+						vehicle.cp.hud.content.pages[page][line][1].text = vehicle.cp.settings.siloSelectedFillType:getLabel()
+					--	vehicle.cp.hud.content.pages[page][line][2].text = vehicle.cp.settings.siloSelectedFillType:getText() 
 					else
-						self:disableButtonWithFunction(vehicle,page, 'changemaxRunNumber')
+						self:disableButtonWithFunction(vehicle,page, 'changeSiloFillType')
 					end
-					
-				elseif entry.functionToCall == 'resetRunCounter' then
-					if vehicle.cp.canDrive and vehicle.cp.settings.runCounterMax:getIsRunCounterActive() then
-						self:enableButtonWithFunction(vehicle,page, 'resetRunCounter')
-						vehicle.cp.hud.content.pages[page][line][1].text = courseplay:loc('COURSEPLAY_RESET_NUMBER_OF_RUNS') ;
-					else
-						self:disableButtonWithFunction(vehicle,page, 'resetRunCounter')
-					end
-					
-					
+					self:updateSiloSelectedFillTypeList(vehicle,page,3,7)					
 				elseif entry.functionToCall == 'switchDriverCopy' then
 					if not vehicle.cp.canDrive and not vehicle.cp.isRecording and not vehicle.cp.recordingIsPaused then
 						self:enableButtonWithFunction(vehicle,page, 'switchDriverCopy')
@@ -1982,6 +1973,20 @@ function courseplay.hud:setupShovelModeButtons(vehicle, pg)
 	--END Page 9
 end
 
+function courseplay.hud:setupSiloSelectedFillTypeList(vehicle,funct, hudPage,startLine,stopLine, column)
+	funct = "Setting:"..funct
+	self:debug(vehicle,"  setupSiloSelectedFillTypeList: "..tostring(funct))
+	local diff = startLine-1
+	for i=startLine,stopLine do 
+		courseplay.button:new(vehicle, hudPage, { 'iconSprite.png', 'navUp' }, funct..":moveUpByIndex",   i-diff, self.buttonPosX[3], self.linesButtonPosY[i], self.buttonSize.small.w, self.buttonSize.small.h, i, -5, false);
+		courseplay.button:new(vehicle, hudPage, { 'iconSprite.png', 'navDown' },  funct..":moveDownByIndex",    i-diff, self.buttonPosX[2], self.linesButtonPosY[i], self.buttonSize.small.w, self.buttonSize.small.h, i,  5, false);
+		courseplay.button:new(vehicle, hudPage, { 'iconSprite.png', 'delete' },  funct..":deleteByIndex",    i-diff, self.buttonPosX[1], self.linesButtonPosY[i], self.buttonSize.small.w, self.buttonSize.small.h, i,  5, false);
+		courseplay.button:new(vehicle, hudPage, { 'iconSprite.png', 'navMinus' }, funct..":decrementRunCounter",   i-diff, self.buttonPosX[5], self.linesButtonPosY[i], self.buttonSize.small.w, self.buttonSize.small.h, line, -5, false);
+		courseplay.button:new(vehicle, hudPage, { 'iconSprite.png', 'navPlus' },  funct..":incrementRunCounter",   i-diff, self.buttonPosX[4], self.linesButtonPosY[i], self.buttonSize.small.w, self.buttonSize.small.h, line,  5, false);
+	--	courseplay.button:new(vehicle, hudPage, nil, funct, 1, self.contentMinX, self.linesButtonPosY[line], self.contentMaxWidth, self.lineHeight, line, 5, true, true);
+		--vehicle.cp.hud.content.pages[hudPage][i][column].functionToCall = funct
+	end
+end
 
 --update functions 
 function courseplay.hud:updateCourseList(vehicle, page)
@@ -2125,6 +2130,30 @@ function courseplay.hud:updateSaveButtonActive(vehicle,state,active,page)
 	for _,button in pairs (vehicle.cp.buttons[page]) do
 		if button.row == state and button.functionToCall == 'saveShovelPosition' then
 			button:setActive(active)
+		end
+	end
+end
+
+function courseplay.hud:updateSiloSelectedFillTypeList(vehicle,page,startLine,stopLine)
+	--text 
+	local diff = startLine-1
+	for i= startLine, stopLine do
+		vehicle.cp.hud.content.pages[page][i][1].text = vehicle.cp.settings.siloSelectedFillType:getText(i-diff)
+		vehicle.cp.hud.content.pages[page][i][2].text = vehicle.cp.settings.siloSelectedFillType:getRunCounterText(i-diff)
+	end
+	--button
+	for _,button in pairs(vehicle.cp.buttons[page]) do
+		local found = string.find(button.functionToCall, "siloSelectedFillType")
+		local foundAddButton = string.find(button.functionToCall, "addFilltype")
+		if found and not foundAddButton then 
+			local size = vehicle.cp.settings.siloSelectedFillType:getSize()
+			if button.parameter <=size then 
+				button:setDisabled(false)
+				button:setShow(true)
+			else
+				button:setDisabled(true)
+				button:setShow(false)
+			end
 		end
 	end
 end
@@ -2311,14 +2340,17 @@ function courseplay.hud:setGrainTransportAIDriverContent(vehicle)
 	--page 1 driving
 	self:addRowButton(vehicle,'setDriveNow', 1, 2, 3 )
 	
-	self:addSettingsRow(vehicle,'changemaxRunNumber', 1, 5, 1 )
-	self:addRowButton(vehicle,'resetRunCounter', 1, 6, 1 )
+--	self:addSettingsRow(vehicle,'changemaxRunNumber', 1, 5, 1 )
+--	self:addRowButton(vehicle,'resetRunCounter', 1, 6, 1 )
 	
 	
-	--page 1 driving
+	--page 3 
 	self:enablePageButton(vehicle, 3)
-	self:addSettingsRowWithArrows(vehicle,'changeSiloFillType', 3, 1, 1 )
-	self:addSettingsRowWithArrows(vehicle,'changeRefillUntilPct', 3, 2, 1 )
+--	self:addSettingsRowWithArrows(vehicle,'changeSiloFillType', 3, 1, 1 )
+	self:addSettingsRowWithArrows(vehicle,'changeRefillUntilPct', 3, 1, 1 )
+
+	self:addRowButton(vehicle,'Setting:siloSelectedFillType:addFilltype', 3, 2, 1 )
+	self:setupSiloSelectedFillTypeList(vehicle,'siloSelectedFillType', 3, 3, 7, 1)
 
 	--page 7 
 	self:addSettingsRow(vehicle,'changeLoadUnloadOffsetX', 7, 5, 1 )

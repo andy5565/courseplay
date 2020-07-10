@@ -854,6 +854,17 @@ function courseplay:load_tippers(vehicle, allowedToDrive)
 	if vehicle.cp.tipperLoadMode == 1 and currentTrailer.cp.currentSiloTrigger ~= nil and not driveOn then
         local acceptedFillType = false;
 		local siloTrigger = currentTrailer.cp.currentSiloTrigger;
+		local fillTypeData = vehicle.cp.settings.siloSelectedFillType:getFillTypes()
+		local currentSelectedFillType = nil
+		if fillTypeData then 
+			for _,data in ipairs(fillTypeData) do 
+				if data.runCounter >0 then 
+					currentSelectedFillType = data.fillType
+					break
+				end		
+			end
+		end
+		vehicle.cp.siloSelectedFillType = currentSelectedFillType or FillType.UNKNOWN
 		if courseplay:fillTypesMatch(vehicle, siloTrigger, currentTrailer) then	
 			local siloIsEmpty = false --siloTrigger:getFillLevel(vehicle.cp.siloSelectedFillType) <= 1;
 			if not siloTrigger.isLoading and not siloIsEmpty and (unloadDistance < vehicle.cp.trailerFillDistance or backUpDistance < 1 ) then
@@ -2212,6 +2223,3 @@ function courseplay:openCloseCover(vehicle, showCover, fillTrigger)
 		end;
 	end; --END for i,tipperWithCover in vehicle.cp.tippersWithCovers
 end;
-
-
-
