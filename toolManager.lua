@@ -856,15 +856,30 @@ function courseplay:load_tippers(vehicle, allowedToDrive)
 		local siloTrigger = currentTrailer.cp.currentSiloTrigger;
 		local fillTypeData = vehicle.cp.settings.siloSelectedFillType:getFillTypes()
 		local currentSelectedFillType = nil
-		if fillTypeData then 
-			for _,data in ipairs(fillTypeData) do 
-				if data.runCounter >0 then 
-					currentSelectedFillType = data.fillType
-					break
-				end		
+		local foundFillType
+		if not siloTrigger.isLoading then
+			vehicle.cp.siloSelectedFillType = FillType.UNKNOWN
+			if fillTypeData then 
+				for _,data in ipairs(fillTypeData) do 
+					if data.runCounter >0 then 
+						if courseplay:fillTypesMatch(vehicle, siloTrigger, currentTrailer) then	
+						--	currentSelectedFillType = data.fillType
+							local fillLevels, capacity = siloTrigger.source:getAllFillLevels(g_currentMission:getFarmId())
+							for fillTypeIndex, fillLevel in pairs(fillLevels) do
+								if fillTypeIndex == data.fillType then 
+									if fillLevel > 0 then 
+										vehicle.cp.siloSelectedFillType = data.fillType
+										break
+									else
+							
+									end
+								end
+							end
+						end
+					end		
+				end
 			end
 		end
-		vehicle.cp.siloSelectedFillType = currentSelectedFillType or FillType.UNKNOWN
 		if courseplay:fillTypesMatch(vehicle, siloTrigger, currentTrailer) then	
 			local siloIsEmpty = false --siloTrigger:getFillLevel(vehicle.cp.siloSelectedFillType) <= 1;
 			if not siloTrigger.isLoading and not siloIsEmpty and (unloadDistance < vehicle.cp.trailerFillDistance or backUpDistance < 1 ) then
