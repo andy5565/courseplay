@@ -49,7 +49,7 @@ function LinkedList:removeFirst()
 		return false
 	end
 	local node = self.First.Next
-	local First.Next = node.Next
+	self.First.Next = node.Next
 	self:decrementCount()
 end
 

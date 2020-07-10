@@ -864,16 +864,21 @@ function courseplay:load_tippers(vehicle, allowedToDrive)
 					if data.runCounter >0 then 
 						if courseplay:fillTypesMatch(vehicle, siloTrigger, currentTrailer) then	
 						--	currentSelectedFillType = data.fillType
+							local breakLoop = false
 							local fillLevels, capacity = siloTrigger.source:getAllFillLevels(g_currentMission:getFarmId())
 							for fillTypeIndex, fillLevel in pairs(fillLevels) do
 								if fillTypeIndex == data.fillType then 
 									if fillLevel > 0 then 
 										vehicle.cp.siloSelectedFillType = data.fillType
+										breakLoop=true
 										break
 									else
 							
 									end
 								end
+							end
+							if breakLoop then 
+								break
 							end
 						end
 					end		
