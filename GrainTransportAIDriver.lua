@@ -107,8 +107,8 @@ function GrainTransportAIDriver:onWaypointChange(newIx)
 	end
 	--temp solution till load_tippers is refactored
 	-- and we can have a non cyclic value that the loading process is finished
-	--THIS is not working as it should with multiple triggers 
-	if newIx == 4 and self:getDriveUnloadNow() then
+	--THIS is not working as it should with multiple trailers!!! 
+	if newIx == 7 and self:getDriveUnloadNow() then
 		self:decrementRunCounter()
 		self:refreshHUD()
 	end	
