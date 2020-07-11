@@ -3016,25 +3016,16 @@ function SiloSelectedFillTypeSetting:decrementRunCounter(index)
 end
 
 function SiloSelectedFillTypeSetting:getKey(parentKey)
-	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeSize
-end
-
-function SiloSelectedFillTypeSetting:getKeyFillType(parentKey)
-	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeFillType
-end
-
-function SiloSelectedFillTypeSetting:getKeyRunCounter(parentKey)
-	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeRunCounter
+	return parentKey .. '.' .. self.xmlKey
 end
 
 function SiloSelectedFillTypeSetting:loadFromXml(xml, parentKey)
-	-- remember the value loaded from XML for those settings which aren't up to date when loading,
-	-- for example the field numbers
-	local size = getXMLInt(xml, self:getKey(parentKey))
+	local size = getXMLInt(xml, self:getKey(parentKey)..self.xmlAttributeSize)
 	if size and size>0 then
-		for i=1,size do 
-			local selectedFillType = getXMLInt(xml, self:getKeyFillType(parentKey))
-			local counter = getXMLInt(xml, self:getKeyRunCounter(parentKey))
+		for key=1,size do 
+			local elementKey = string.format("%s.element(%d)", self:getKey(parentKey), key-1)
+			local selectedFillType = getXMLInt(xml, elementKey..self.xmlAttributeFillType)
+			local counter = getXMLInt(xml, elementKey..self.xmlAttributeRunCounter)
 			if selectedFillType and counter then 
 				self:addLast({fillType = selectedFillType, text = g_fillTypeManager:getFillTypeByIndex(selectedFillType).title, runCounter = counter})
 			end
@@ -3044,16 +3035,15 @@ end
 
 function SiloSelectedFillTypeSetting:saveToXml(xml, parentKey)
 	local size = self:getSize()
-	setXMLInt(xml, self:getKey(parentKey), Utils.getNoNil(size,0))
+	setXMLInt(xml, self:getKey(parentKey)..self.xmlAttributeSize, Utils.getNoNil(size,0))
 	if size > 0 then 
-		for _,data in ipairs(self.List:getData())
-			setXMLInt(xml, self:getKeyFillType(parentKey), Utils.getNoNil(data.fillType,0))
-			setXMLInt(xml, self:getKeyRunCounter(parentKey), Utils.getNoNil(data.runCounter,0))
+		for key,data in ipairs(self.List:getData()) do
+			local elementKey = string.format("%s.element(%d)", self:getKey(parentKey), key-1)
+			setXMLInt(xml, elementKey..self.xmlAttributeFillType, Utils.getNoNil(data.fillType,0))
+			setXMLInt(xml, elementKey..self.xmlAttributeRunCounter, Utils.getNoNil(data.runCounter,0))
 		end
 	end
 end
-
-
 
 --- Container for settings
 --- @class SettingsContainer
