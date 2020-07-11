@@ -865,7 +865,15 @@ function courseplay:load_tippers(vehicle, allowedToDrive)
 						if courseplay:fillTypesMatch(vehicle, siloTrigger, currentTrailer) then	
 						--	currentSelectedFillType = data.fillType
 							local breakLoop = false
-							local fillLevels, capacity = siloTrigger.source:getAllFillLevels(g_currentMission:getFarmId())
+							local fillLevels, capacity
+							if siloTrigger.source and  siloTrigger.source.getAllFillLevels then 
+								fillLevels, capacity = siloTrigger.source:getAllFillLevels(g_currentMission:getFarmId())
+							elseif siloTrigger.source and siloTrigger.source.getAllProvidedFillLevels then
+								fillLevels, capacity = siloTrigger.source:getAllProvidedFillLevels(g_currentMission:getFarmId(), self.extraParamater)
+							else
+								courseplay:debug('fillLevels not found !!', 2);
+								break
+							end						
 							for fillTypeIndex, fillLevel in pairs(fillLevels) do
 								if fillTypeIndex == data.fillType then 
 									if fillLevel > 0 then 
