@@ -2876,6 +2876,10 @@ function SiloSelectedFillTypeSetting:init(vehicle)
 	LinkedListSetting.init(self, 'siloSelectedFillType', 'COURSEPLAY_FARM_SILO_FILL_TYPE', 'COURSEPLAY_FARM_SILO_FILL_TYPE', vehicle)
 	self.MAX_RUNS = 20
 	self.MAX_FILLTYPES = 5
+	self.xmlKey = 'siloSelectedFillType'
+	self.xmlAttributeSize = '#size'
+	self.xmlAttributeRunCounter = '#runCounter'
+	self.xmlAttributeFillType = '#fillType'
 end
 
 function SiloSelectedFillTypeSetting:addFilltype()
@@ -3010,6 +3014,46 @@ function SiloSelectedFillTypeSetting:decrementRunCounter(index)
 		end
 	end
 end
+
+function SiloSelectedFillTypeSetting:getKey(parentKey)
+	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeSize
+end
+
+function SiloSelectedFillTypeSetting:getKeyFillType(parentKey)
+	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeFillType
+end
+
+function SiloSelectedFillTypeSetting:getKeyRunCounter(parentKey)
+	return parentKey .. '.' .. self.xmlKey .. self.xmlAttributeRunCounter
+end
+
+function SiloSelectedFillTypeSetting:loadFromXml(xml, parentKey)
+	-- remember the value loaded from XML for those settings which aren't up to date when loading,
+	-- for example the field numbers
+	local size = getXMLInt(xml, self:getKey(parentKey))
+	if size and size>0 then
+		for i=1,size do 
+			local selectedFillType = getXMLInt(xml, self:getKeyFillType(parentKey))
+			local counter = getXMLInt(xml, self:getKeyRunCounter(parentKey))
+			if selectedFillType and counter then 
+				self:addLast({fillType = selectedFillType, text = g_fillTypeManager:getFillTypeByIndex(selectedFillType).title, runCounter = counter})
+			end
+		end
+	end
+end
+
+function SiloSelectedFillTypeSetting:saveToXml(xml, parentKey)
+	local size = self:getSize()
+	setXMLInt(xml, self:getKey(parentKey), Utils.getNoNil(size,0))
+	if size > 0 then 
+		for _,data in ipairs(self.List:getData())
+			setXMLInt(xml, self:getKeyFillType(parentKey), Utils.getNoNil(data.fillType,0))
+			setXMLInt(xml, self:getKeyRunCounter(parentKey), Utils.getNoNil(data.runCounter,0))
+		end
+	end
+end
+
+
 
 --- Container for settings
 --- @class SettingsContainer
